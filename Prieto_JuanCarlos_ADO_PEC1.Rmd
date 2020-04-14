@@ -1,0 +1,220 @@
+---
+title: "PEC1"
+author: "Juan Carlos Prieto Prieto"
+date: "9 de abril de 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Abstract: 
+La respuesta de las células tumorales a la forma inusual de daño en el ADN causado por venenos de topoisomerasa como la camptotecina (CPT) es poco conocida, y se carece de conocimiento sobre qué medicamentos pueden combinarse efectivamente con CPT. Para comprender mejor la respuesta de las células tumorales a la CPT e identificar posibles objetivos para la terapia adyuvante, examinamos los cambios globales en la abundancia de ARNm en las células HeLa después del tratamiento con CPT utilizando Affymetrix U133A GeneChips, que incluyen todos los genes humanos anotados (22,283 conjuntos de sondas). El análisis estadístico de los datos utilizando una prueba Bayesian / Cyber t y una corrección modificada de Benjamini y Hochberg para múltiples pruebas de hipótesis identificó 188 conjuntos de sondas inducidas y 495 reprimidas 8 h después del tratamiento con CPT a una tasa de descubrimiento falso de <0.05 y un cambio mínimo de 3 veces. Este enfoque farmacogenómico nos llevó a identificar dos vías inducidas por CPT: (a) el receptor del factor de crecimiento epidérmico; y (b) factores antiapoptóticos regulados por el factor nuclear kappaB. Los experimentos que utilizan células HeLa en nuestro laboratorio y estudios previos con modelos animales realizados en otros lugares confirman que los inhibidores de estas vías respectivas mejoran de forma superaditiva la citotoxicidad de CPT, lo que sugiere su potencial como objetivos para la terapia adyuvante con CPT.
+
+#Objetivos: 
+Se pretende estudiar los cambios inducidos por los niveles de homociste?na en la expresi?n gen?tica de c?lulas embrionarias de pollo (Gallus Gallus). 
+
+#Materiales y m?todos: 
+##1:
+Se tomaron muestras de RNA con 3 r?plicas biol?gicas durante un d?a (24 horas) a intervalos de 4 horas (ZT0, ZT4, ZT8, ZT12, ZT16 y ZT20). El periodo de luz va desde ZT0 a ZT12 y el de oscuridad de ZT12 a ZT0. Usando placas de microarray de affymetrix ATH1-121501. 
+
+##2: 
+Comenzamos cargando los datos necesarios para el estudio desde los directorios donde se almacena. 
+
+```{r}
+library(affy)
+library(simpleaffy)
+library(affyPLM)
+```
+
+```{r}
+setwd("C:/Users/usuario/Desktop/Master/3er Semestre/Análisis datos ómicos/PEC1/GDS885")
+library(affy)
+microarrays <- ReadAffy(verbose=TRUE)
+microarrays
+```
+
+Y realizamos un análisis preliminar de los datos. Podemos observar la distribución mediante el histograma y el boxplot, así como una imagen general (solo de dos de los genes estudiados) y el control de calidad mediante el quality plot.
+
+
+```{r}
+image(microarrays[,1],col=rainbow(100))
+boxplot(microarrays,col = c(rep("red",4),rep("green",3)),las=2,ylab="Gene expression")
+hist(microarrays,col = c(rep("red",4),rep("green",3)))
+quality.control <- qc(microarrays)
+plot(quality.control)
+```
+
+```{r}
+# Version info: R 3.2.3, Biobase 2.30.0, GEOquery 2.40.0, limma 3.26.8
+# R scripts generated  Thu Apr 9 12:10:59 EDT 2020
+
+
+# Unable to generate script analyzing differential expression.
+#      Invalid input: at least two groups of samples should be selected.
+
+################################################################
+#   Boxplot for selected GEO samples
+
+library(Biobase)
+library(GEOquery)
+
+# load series and platform data from GEO
+
+gset <- getGEO("GSE1417", GSEMatrix =TRUE)
+if (length(gset) > 1) idx <- grep("GPL96", attr(gset, "names")) else idx <- 1
+gset <- gset[[idx]]
+
+
+#Matriz de expresión
+
+ex <- exprs(gset)
+str(ex)
+
+# set parameters and draw the plot
+
+dev.new(width=4+dim(gset)[[2]]/5, height=6)
+par(mar=c(2+round(max(nchar(sampleNames(gset)))/2),4,2,1))
+title <- paste ("GSE1417", '/', annotation(gset), " selected samples", sep ='')
+boxplot(ex, boxwex=0.7, notch=T, main=title, outline=FALSE, las=2)
+
+```
+
+Pasamos a realizar la normalización mediante el modelo RMA. Y analizar visualmente los resultados tras esto. 
+
+```{r}
+library(hgu133a.db)
+library(hgu133acdf)
+microarray.norm <- affy::rma(microarrays)
+boxplot(microarray.data,col = c(rep("red",4),rep("green",3)),las=2,ylab="Gene Expression")
+hist(microarray.data,col = c(rep("red",4),rep("green",3)))
+```
+
+```{r}
+
+```
+
+
+
+
+Y extraemos los niveles de expresi?n de la misma matriz generada: 
+
+```{r}
+exp <- exprs(microarray.data)
+probe.names <- rownames(exp)
+sampleID <- c("Control1", "Control2", "Control3", "Control4", "Case1", "Case2", "Case3")
+colnames(exp) <- sampleID
+head(exp)
+```
+
+```{r}
+# perform RMA normalization (log2)
+data.rma.norm = affy::rma(microarrays)
+
+# Get the expression estimates for each array
+rma = exprs(data.rma.norm)
+
+
+
+# Write RMA-normalized, mapped data to file
+write.table(exp, file = "rma.txt", quote = FALSE, sep = "\t")
+
+#Annotation
+tt = cbind(row.names(rma), rma)
+colnames(tt) = c("ProbID", sub(".cel", "", colnames(rma), ignore.case = TRUE))
+rownames(tt) = NULL
+tt[1:5, 1:5]
+
+require(RCurl)
+myURL <- getURL("https://dl.dropboxusercontent.com/u/8272421/geo/HGU133A.na33.txt",
+ssl.verifypeer = FALSE)
+annot <- read.table(textConnection(myURL), header = TRUE, sep = "\t")
+head(annot)
+
+# probe sets were mapped to Entrez Gene IDs.
+# comb=merge(annot,tt,by.x='ProbeSetID',by.y='ProbID',all.y=TRUE)
+comb = merge(annot, tt, by.x = "ProbeSetID", by.y = "ProbID")
+comb[1:5, 1:5]
+
+write.table(comb, file = "comb2.txt", quote = FALSE, sep = "\t", row.names = FALSE)
+
+# If multiple probe sets corresponded to the same gene, then the expression
+# values of these probe sets were averaged.
+comb2 <- subset(comb, select = -c(ProbeSetID))
+comb2 <- data.frame(lapply(comb2, as.character), stringsAsFactors = FALSE)
+comb2 <- data.frame(lapply(comb2, as.numeric), stringsAsFactors = FALSE)
+out <- aggregate(. ~ EntrezGene, data = comb2, mean)
+
+# Format values to 5 decimal places
+out = format(out, digits = 5)
+out[1:5, 1:5]
+```
+
+Para realizar la selección de genes expresados diferencialmente utilizaremos el paquete limma, realizando una serie de métodos estadísticos. 
+Primero creamos una matriz con nuestros resultados y luego lo modelamos con la función lmfit: 
+
+```{r}
+library(limma)
+experiment.design <- model.matrix(~-1+factor(c(1:7)))
+fit <- lmFit(exp, experiment.design)
+fit
+```
+
+Para obtener los contrastes utilizaremos la funci?n makecontrast realizando alg?n cambio en los datos: 
+
+```{r}
+contrast.matrix <- makeContrasts(ZT00-ZT04,ZT00-ZT08,ZT00-ZT12,ZT00-ZT16,ZT00-ZT20,ZT04-ZT08,ZT04-ZT12,ZT04-ZT16,ZT04-ZT20,ZT08-ZT12,ZT08-ZT16,ZT08-ZT20,ZT12-ZT16,ZT12-ZT20,ZT16-ZT20,levels=c("ZT00","ZT04","ZT08","ZT12","ZT16","ZT20"))
+```
+
+Y ahora pasamos a ajustar el modelo lineal seg?n las comparaciones que hemos realizado antes: 
+
+```{r}
+fit2 <- contrasts.fit(fit, contrast.matrix)
+ebayes <- eBayes(fit2)
+```
+
+```{r}
+DEGs.ZT00.ZT04 <- topTable(ebayes, number=22810,coef=1)
+head(DEGs.ZT00.ZT04)
+```
+
+En esta tabla nos interesan los valores de P.value y el valor de p ajustado al nivel de significaci?n que queramos usar. 
+Para realizar la selecci?n usar? el fold-change, con valores de expresi?n superiores a 99% (de significaci?n)
+
+```{r}
+fold.change.ZT00.ZT04 <- DEGs.ZT00.ZT04[["logFC"]]
+log.p.value.ZT00.ZT04 <- -log10(DEGs.ZT00.ZT04[["adj.P.Val"]])
+probe.names <- DEGs.ZT00.ZT04[["ID"]]
+```
+
+Determinamos como genes activados de forma diferencial activated.ZT00.ZT04 aquellos cuyo fold-change es superior a 1 con una significancia mayor de 99% (p-valor menor 0.01 por lo tanto el correspondiente exponente obtenido como - log10 debe ser mayor de 2). De forma an?loga determinamos como genes inhibidos de forma diferencial inhibited.ZT00.ZT04 aquellos cuyo fold.change es inferior a -1 (esto corresponde a genes que ven su expresi?n disminuida en menos de la mitad) con una significancia mayor del 99%:
+
+```{r}
+activated.ZT00.ZT04 <- (fold.change.ZT00.ZT04 > 1) & (log.p.value.ZT00.ZT04 > 2)
+inhibited.ZT00.ZT04 <- (fold.change.ZT00.ZT04 < - 1) & (log.p.value.ZT00.ZT04 > 2)
+```
+
+Y pasamos a representar gr?ficamente los genes medianteun volcano plot y un gr?fico de dispersi?n:
+
+```{r}
+plot(fold.change.ZT00.ZT04,log.p.value.ZT00.ZT04,pch=19,cex=0.5,col="grey",ylab="-log10(p value)",xlab="log2 fold change")
+points(fold.change.ZT00.ZT04[activated.ZT00.ZT04],log.p.value.ZT00.ZT04[activated.ZT00.ZT04],pch=19,cex=0.5,col="red")
+points(fold.change.ZT00.ZT04[inhibited.ZT00.ZT04],log.p.value.ZT00.ZT04[inhibited.ZT00.ZT04],pch=19,cex=0.5,col="blue")
+cond0h <- (expression.level[,"ZT0_1"] + expression.level[,"ZT0_2"] + expression.level[,"ZT0_3"])/3
+cond4h <- (expression.level[,"ZT4_1"] + expression.level[,"ZT4_2"] + expression.level[,"ZT4_3"])/3
+cond8h <- (expression.level[,"ZT8_1"] + expression.level[,"ZT8_2"] + expression.level[,"ZT8_3"])/3
+cond12h <- (expression.level[,"ZT12_1"] + expression.level[,"ZT12_2"] + expression.level[,"ZT12_3"])/3
+cond16h <- (expression.level[,"ZT16_1"] + expression.level[,"ZT16_2"] + expression.level[,"ZT16_3"])/3
+cond20h <- (expression.level[,"ZT20_1"] + expression.level[,"ZT20_2"] + expression.level[,"ZT20_3"])/3
+mean.expression <- matrix(c(cond0h,cond4h,cond8h,cond12h,cond16h,cond20h), nrow=6,ncol=length(cond0h),byrow=TRUE)
+colnames(mean.expression) <- names(cond0h)
+rownames(mean.expression) <- c("ZT0", "ZT4", "ZT8", "ZT12", "ZT16", "ZT20")
+plot(mean.expression["ZT0",],mean.expression["ZT4",],pch=19,cex=0.5,col="grey",xlab="ZT0",ylab="ZT4")
+points(mean.expression["ZT0",(cond0h-cond4h)>1],mean.expression["ZT4",(cond0h-cond4h) > 1],pch=19,cex=0.5,col="red")
+points(mean.expression["ZT0",(cond0h-cond4h) < -1],mean.expression["ZT4",(cond0h-cond4h) < -1],pch=19,cex=0.5,col="blue")
+```
+
+#Discusi?n: 
+Al analizar los datos obtenidos en un estudio de microarrays es importante tener en cuenta c?mo se han obtenido los datos (el n?mero de repeticiones, el n?mero de genes estudiados, y los procesos estad?sticos realizados)
+
