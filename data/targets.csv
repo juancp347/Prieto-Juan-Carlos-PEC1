@@ -1,0 +1,8 @@
+﻿FileName;Sample;Group;ShortName;CPT
+GSM23372;Untreated HeLa Replicate 1 U133A;A;control1;NO
+GSM23373;Untreated HeLa Replicate 2 U133A;A;control2;NO
+GSM23377;Untreated HeLa Replicate 3 U133A;A;control3;NO
+GSM23378;Untreated HeLa Replicate 4 U133A;A;control4;NO
+GSM23382;Camptothecin Treated HeLa Replicate 1 U133A;B;case1;YES
+GSM23383;Camptothecin Treated HeLa Replicate 2 U133A;B;case2;YES
+GSM23384;Camptothecin Treated HeLa Replicate 3 U133A;B;case3;YES
